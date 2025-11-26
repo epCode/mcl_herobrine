@@ -1,0 +1,1 @@
+average_spawn_time (Average time between appearing in seconds) int 900

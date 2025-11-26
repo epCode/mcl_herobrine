@@ -1,4 +1,7 @@
 
+local AVERAGESPAWN = tonumber(core.settings:get("average_spawn_time")) or 900
+core.log("action", "Average time between herobrine spawn set to "..AVERAGESPAWN.." seconds, or "..(AVERAGESPAWN/60).." minutes.")
+
 herob = {
   pranks = {},
   wieldview_luaentites = {}
@@ -564,13 +567,13 @@ core.register_entity("mcl_herobrine:herobrine_dead", {
 
 
 
-local timer = math.random(1) -- when timer hits zero, hero tries to spawn somewhere.
+local timer = math.random(AVERAGESPAWN*2) -- when timer hits zero, hero tries to spawn somewhere.
 -- Herobrine player-tick
 core.register_globalstep(function(dtime)
   if herobrine_is then return end
-  timer = timer + dtime
-  if timer > 1 then
-    timer = 0
+  timer = timer - dtime
+  if timer < 0 then
+    timer = math.random(AVERAGESPAWN*2)
     for _,player in pairs(core.get_connected_players()) do
 
       local pos = player:get_pos()
