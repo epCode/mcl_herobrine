@@ -1,2 +1,2 @@
 # mcl_herobrine
-A Luanti mod that adds Herobrine into the game.
+This mod adds Herobrine into VoxelLibre (formerly Mineclone2)
