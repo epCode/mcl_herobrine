@@ -2,6 +2,9 @@
 local AVERAGESPAWN = tonumber(core.settings:get("average_spawn_time")) or 900
 core.log("action", "Average time between herobrine spawn set to "..AVERAGESPAWN.." seconds, or "..(AVERAGESPAWN/60).." minutes.")
 
+local ONEATATIME = core.settings:get_bool("one_at_a_time")
+
+
 herob = {
   pranks = {},
   wieldview_luaentites = {}
@@ -14,7 +17,7 @@ dofile(modname.."/defines.lua")
 
 -- if herobrine already exists substantially somewhere else,
 -- than do not allow more than one of him to spawn
-local herobrine_is = false
+herob.herobrine_is = false
 
 -- Neferious deeds TODO:
 -- Drop lava on things the player has made
@@ -29,9 +32,21 @@ local hb_collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.89, 0.3}
 local DST = true
 
 
+local function herobrine_exists()
+  if ONEATATIME == false then
+    return false
+  else
+    return herob.herobrine_is
+  end
+end
+
 
 
 function herob.register_prank(name, def, func)
+  local setting = minetest.settings:get_bool("enable_prank_"..name)
+  -- if this prank is disabled then do not register it. (it may return nil which
+  -- just means it hasn't been set yet) so defaulting to true
+  if setting == false then core.log("action", "Prank: "..name.." is disabled") return end
   def.type = def.type or "node_indexed" -- types:
   -- player_indexed : player position.
   -- node_indexed   : certain nodes around player.
@@ -157,12 +172,14 @@ local function spawn(pos, intent)
   -- disabled log because it happens to often
   if not pos then --[[core.log("warning", "Tried to spawn herobrine but no valid position found!")]] return end
   local obj = core.add_entity(pos, "mcl_herobrine:herobrine")
-  herobrine_is = true
+  herob.herobrine_is = true
   local lua = obj:get_luaentity()
   
   lua.intent = intent
   
-  --herobrine_is = true
+  core.log("action", "Herobrine spawned at "..core.pos_to_string(pos).." with intent to commit prank "..intent.current_prank..".")
+  
+  --herob.herobrine_is = true
 end
 
 
@@ -399,7 +416,7 @@ local herobrine = {
           child:remove()
         end
         self.object:remove()
-        herobrine_is = false
+        herob.herobrine_is = false
       end
     end
     
@@ -441,11 +458,11 @@ local herobrine = {
     end
     
     -- allow respawn
-    herobrine_is = false
+    herob.herobrine_is = false
   end,
   after_activate = function(self)
     -- add eyes whens spawn
-    herobrine_is = true
+    herob.herobrine_is = true
     core.add_entity (self.object:get_pos(), "mcl_herobrine:hero_eyes")
 		:set_attach(self.object, "Head", vector.new(0,-14,-0.1), vector.new(0,180,0))
   end,
@@ -481,7 +498,7 @@ local herobrine = {
     -- if we have a prank to carry out
     if self.intent.prank_pos then
       local nearpos = find_spawn_near(self.intent.prank_pos, 3, true)
-      if nearpos and self:ready_to_path() and not self.intent.at_target and not self._necessary_path then
+      if nearpos and self:ready_to_path() and not self.intent.at_target and not self._necessary_path and herob.pranks[self.intent.current_prank] then
         local path = self:gopath(nearpos,get_prank_function(self, herob.pranks[self.intent.current_prank].func))
         
         if not path and vector.distance(s, nearpos) > 2 then
@@ -570,7 +587,7 @@ core.register_entity("mcl_herobrine:herobrine_dead", {
 local timer = math.random(AVERAGESPAWN*2) -- when timer hits zero, hero tries to spawn somewhere.
 -- Herobrine player-tick
 core.register_globalstep(function(dtime)
-  if herobrine_is then return end
+  if herobrine_exists() then return end
   timer = timer - dtime
   if timer < 0 then
     timer = math.random(AVERAGESPAWN*2)
@@ -602,7 +619,7 @@ core.register_globalstep(function(dtime)
       if possible_pranks[1] then
         local prank_index = math.random(#possible_pranks)
         spawn(find_spawn_near(possible_pranks[prank_index].prank_pos, possible_pranks[prank_index].distance_from_player), possible_pranks[prank_index])
-        if herobrine_is then return end
+        if herobrine_exists() then return end
       end
 
     end

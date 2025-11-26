@@ -1,3 +1,7 @@
+-- Note to self:
+-- For each prank, add a disable feature in settingtypes.txt
+-- I wish there was a more modular way to do this :P
+
 herob.register_prank("loot_chest", {nodenames = herob.lootablechests, creep_line_chance = 5, creep_lines={"You have some goodies here..", "Glad you left your chests unlocked.."}}, function(self)
   
   local cpos = self.intent.at_target

@@ -1,1 +1,18 @@
+
+
+[Pranks]
+
+# Uncheck to disable unwanted pranks.
+enable_prank_loot_chest (Looting Chests) bool true
+enable_prank_tnt_trap (Tnt Trap) bool true
+enable_prank_fire (Flint and Steeeel!) bool true
+enable_prank_take_torch (Take Torch) bool true
+enable_prank_take_bed (Take Bed) bool true
+
+[Misc]
+
+# A random time in seconds is drawn from double this number
 average_spawn_time (Average time between appearing in seconds) int 900
+
+
+one_at_a_time (Only allow one Herobrine to exist at once.) bool true
