@@ -27,9 +27,9 @@ herob.herobrine_is = false
 -- Watch them
 
 
-
+-- Herobrine's collisionbox
 local hb_collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.89, 0.3}
-local DST = true
+local DST = false -- Disables view teleportation for debug and testing
 
 
 local function herobrine_exists()
@@ -398,7 +398,7 @@ local herobrine = {
       	time = 0.001,
       	texture = {
           name = "mcl_portals_particle"..math.random(1, 5)..".png",
-          alpha_tween = {0,1},
+          alpha = 0.01,
           scale_tween = {
             {x = 1, y = 1},
             {x = 0, y = 0},
@@ -417,6 +417,7 @@ local herobrine = {
         end
         self.object:remove()
         herob.herobrine_is = false
+        return true
       end
     end
     
@@ -489,7 +490,7 @@ local herobrine = {
         -- teleport to player instead of running
         local telepos = find_spawn_near(self.attack:get_pos(), 3, true)
         if telepos then
-          self.teleportaway(self, telepos)
+          if self.teleportaway(self, telepos) then return true end
         end
       end
     end
@@ -502,7 +503,7 @@ local herobrine = {
         local path = self:gopath(nearpos,get_prank_function(self, herob.pranks[self.intent.current_prank].func))
         
         if not path and vector.distance(s, nearpos) > 2 then
-          self.teleportaway(self, nearpos)
+          if self.teleportaway(self, nearpos) then return true end
           self.object:set_velocity(vector.zero())
           self._walk_chance = 0
           herob.pranks[self.intent.current_prank].func(self)
@@ -511,6 +512,7 @@ local herobrine = {
         end
       elseif not nearpos then -- if we can't stand near our target then just leave.
         self.teleportaway(self)
+        return
       end
     end
     
@@ -580,7 +582,7 @@ core.register_entity("mcl_herobrine:herobrine_dead", {
 
 
 -- Dev spawn egg (not for general use)
--- mcl_mobs.register_egg("mcl_herobrine:herobrine", "Herobrine", "#00afaf", "#799c66", 0)
+mcl_mobs.register_egg("mcl_herobrine:herobrine", "Herobrine", "#00afaf", "#799c66", 0)
 
 
 

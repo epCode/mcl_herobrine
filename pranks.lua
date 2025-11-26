@@ -2,9 +2,13 @@
 -- For each prank, add a disable feature in settingtypes.txt
 -- I wish there was a more modular way to do this :P
 
+
+-- returning true for a prank indicates faliure.
+
 herob.register_prank("loot_chest", {nodenames = herob.lootablechests, creep_line_chance = 5, creep_lines={"You have some goodies here..", "Glad you left your chests unlocked.."}}, function(self)
   
-  local cpos = self.intent.at_target
+  local cpos = self.intent.prank_pos
+  if not cpos then return true end
   
   local node = minetest.get_node(cpos)
   
