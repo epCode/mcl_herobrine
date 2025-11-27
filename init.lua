@@ -290,7 +290,7 @@ local function get_prank_function(self, prankfunc)
     -- path logic
     if self._partial_path then -- if this was a subbed out path due to unavailable final destination
 
-      self._walk_chance = 0
+      self.walk_chance = 0
       
     end
     self.intent.at_target = self.intent.prank_pos -- (we have arrived, stop trying to reach)
@@ -356,7 +356,7 @@ local herobrine = {
 	pathfinding = 1,
 	jump = true,
 	jump_height = 4,
-  walk_chance = 10,
+  walk_chance = 0,
 	group_attack = { "mcl_hb:herobrine", "mcl_hb:baby_herobrine", "mcl_hb:husk", "mcl_hb:baby_husk" },
 	animation = {
 		stand_start = 0, stand_end = 79, stand_speed = 1,
@@ -500,12 +500,13 @@ local herobrine = {
     if self.intent.prank_pos then
       local nearpos = find_spawn_near(self.intent.prank_pos, 3, true)
       if nearpos and self:ready_to_path() and not self.intent.at_target and not self._necessary_path and herob.pranks[self.intent.current_prank] then
+        self.walk_chance = 1
         local path = self:gopath(nearpos,get_prank_function(self, herob.pranks[self.intent.current_prank].func))
         
-        if not path and vector.distance(s, nearpos) > 2 then
+        if not path and vector.distance(s, nearpos) > 1.5 then
           if self.teleportaway(self, nearpos) then return true end
           self.object:set_velocity(vector.zero())
-          self._walk_chance = 0
+          self.walk_chance = 0
           herob.pranks[self.intent.current_prank].func(self)
         else
           self._partial_path = false
