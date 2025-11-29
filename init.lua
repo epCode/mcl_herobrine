@@ -9,7 +9,7 @@ core.log("action", "Average time between herobrine spawn set to "..AVERAGESPAWN.
 local ONEATATIME = core.settings:get_bool("one_at_a_time")
 herob.all_bases = {} -- needs to be a playername indexed list of base clusters
 local BASE_EPSILON = 60    -- max distance between points in the same base (60 blocks radius)
-local MIN_BASE_BLOCKS = 20 -- minimum number of blocks to be considered a significant 'base'
+local MIN_BASE_BLOCKS = 200 -- minimum number of blocks to be considered a significant 'base'
 
 
 
