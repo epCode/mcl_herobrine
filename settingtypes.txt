@@ -8,6 +8,9 @@ enable_prank_tnt_trap (Tnt Trap) bool true
 enable_prank_fire (Flint and Steeeel!) bool true
 enable_prank_take_torch (Take Torch) bool true
 enable_prank_take_bed (Take Bed) bool true
+enable_prank_lava_on_base (Lava!!) bool true
+enable_prank_push_player_off_cliff (Push Payers off Cliff) bool true
+
 
 [Misc]
 
