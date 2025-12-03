@@ -25,11 +25,14 @@ herob.herobrine_is = false
 -- Neferious deeds TODO:
 -- Watch them
 -- Make creeper sound
+-- Mine trees
+-- Strip (mine)
+-- 
 
 
 -- Herobrine's collisionbox
 local hb_collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.89, 0.3}
-local DST = true -- Disables view teleportation for debug and testing
+local DST -- Disables view teleportation for debug and testing
 
 
 local function herobrine_exists()
@@ -51,6 +54,11 @@ function herob.register_prank(name, def, func)
   -- player_indexed : player position.
   -- node_indexed   : certain nodes around player.
   -- base_indexed   : Spawn in the player's base.
+  
+  def.persistent = def.persistent or function(self, dtime, moveresult) return true end
+  -- global step (if return = false then normal prank code is not run for this prank.)
+  -- eg; pathfinding to prank_pos.. That's basically it. If returned true, globalstep continues as normal
+  def.requires = def.requires or {}
   def.creep_line_chance = def.creep_line_chance or 1 -- how often Herobrine will send to player chat a creep line after a Neferious deed.
   def.distance_from_player = def.distance_from_player or 30 -- how far around the player to look
   def.func = func -- what to do when we get to where we're going.
@@ -124,6 +132,7 @@ local check_players = function(s, leway, collisionbox)
   -- can player see us from this position (based on player screen and los)
   -- leway is how far behind the player we must allow.
   -- eg. 1 = 90 degrees (Can spawn to the left, right, or anywhere behind)
+  -- 0.5 = visible on edges of screen
   -- 2 = ~135 degrees (Can spawn mostly just behind player.)  etc.
   leway = leway or 1
   for _,player in pairs(core.get_connected_players()) do
@@ -132,7 +141,16 @@ local check_players = function(s, leway, collisionbox)
     local dist = vector.distance(p, s)
     local lookpos = vector.add(vector.multiply(dir, dist), p)
     
-    if vector.distance(lookpos, s) < dist*leway and los(vector.add(p, vector.new(0,player:get_properties().eye_height,0)), s, collisionbox) then
+    -- vector.distance(lookpos, s) < (dist*leway)/math.ceil(dist/25)
+    -- This bit of code ^^
+    -- essentially defines the players fov (not utilizing fov itself)
+    -- and makes it directly preportionate to player distance and projected
+    -- eye position distance. the farther away however, the more hero can
+    -- be on your screen "blindspots essentially" since he's too far away.
+    
+    -- when he's 25 or more blocks, away the amount he can be on your screen increases.
+    
+    if vector.distance(lookpos, s) < (dist*leway)/math.ceil(dist/25) and los(vector.add(p, vector.new(0,player:get_properties().eye_height,0)), s, collisionbox) then
       if DST then
         return
       else
@@ -257,7 +275,7 @@ local function update_wieldview_entity(object)
 		local obj_ref = core.add_entity(object:get_pos(), "mcl_wieldview:wieldview")
 		if not obj_ref then return end
     if core.registered_tools[item] then
-      obj_ref:set_attach(object, "Wield_Item", vector.new(0,2.2,0), vector.new(90,45,90))
+      obj_ref:set_attach(object, "Wield_Item", vector.new(0,2.2,0), vector.new(90+180,45-90,90))
     else
       obj_ref:set_attach(object, "Wield_Item")
     end
@@ -299,11 +317,10 @@ local numtohex = {
   [15] = "f",
 }
 
-local function get_prank_function(self, prankfunc)
+function herob.get_prank_function(self, prankfunc)
   -- stuff to run before running defined prank func
   local prank = herob.pranks[self.intent.current_prank]
   local function func(self, pos)
-    self.walk_chance = 0
 
     self.intent.at_target = self.intent.prank_pos -- (we have arrived, stop trying to reach)
     if not prankfunc(self, pos) then
@@ -369,23 +386,50 @@ local herobrine = {
 	pathfinding = 1,
 	jump = true,
 	jump_height = 4,
-  walk_chance = 0,
 	group_attack = { "mcl_hb:herobrine", "mcl_hb:baby_herobrine", "mcl_hb:husk", "mcl_hb:baby_husk" },
 	animation = {
 		stand_start = 0, stand_end = 79, stand_speed = 1,
 		walk_start = 168, walk_end = 187, speed_normal = 1,
 		run_start = 168, run_end = 187, speed_run = 1,
-		punch_start = 189, punch_end = 198, punch_speed = 1,
+		punch_start = 189, punch_end = 198, punch_speed = 2,
 	},
 	floats = 1,
 	view_range = 128,
 	attack_type = "dogfight",
   on_spawn = function(self)
+    self.item_drop_management = function()
+      
+      local items_to_pickup = {}
+      local s = self.object:get_pos()
+      local objs = core.get_objects_inside_radius(s, 2.1)
+      
+      for _,obj in pairs(objs) do
+        local le = obj:get_luaentity()
+        if le and le.itemstring then
+          table.insert(items_to_pickup, obj)
+        end
+      end
+      
+      for _,item in pairs(items_to_pickup) do
+        local itemstring = item:get_luaentity().itemstring
+        herob.add_to_inv(ItemStack(itemstring))
+        minetest.sound_play("item_drop_pickup", { -- direct copy of sound code from `mcl_item_entity`
+					pos = pos,
+					gain = 0.3,
+					max_hear_distance = 16,
+					pitch = math.random(70, 110) / 100
+				})
+        item:remove()
+      end
+      
+    end
     -- defining functions in a poor way
     self.set_wielded_item = function(self, stack_id)
       local inv = herob.get_inv()
       self.wielded_item_id = stack_id
       self.wielded_item = inv:get_stack("main", stack_id)
+      -- dont question it..
+      update_wieldview_entity(self.object)
       update_wieldview_entity(self.object)
     end
     -- if no position specified then teleport into the void
@@ -422,6 +466,10 @@ local herobrine = {
       })
       telesound(p, true)
       --save_self(self)
+      if self.openchestentity then
+        self.openchestentity:close("herobrine")
+      end
+
       if position then
         self.object:set_pos(position)
       else
@@ -481,7 +529,7 @@ local herobrine = {
 		:set_attach(self.object, "Head", vector.new(0,-14,-0.1), vector.new(0,180,0))
   end,
   do_custom = function(self, dtime, moveresult)
-    
+    self._ticktimer = (self._ticktimer or 0) + dtime
     
     
     local s = self.object:get_pos()
@@ -494,7 +542,7 @@ local herobrine = {
     self._tel_timer = (self._tel_timer or 40)-dtime
     if (self._tel_timer < 0 and not self.attack) or check_players(self.object:get_pos(), 1, hb_collisionbox) --[[or core.get_node_light(vector.add(s, vector.new(0,1,0))) >= 5]] then
       self.teleportaway(self)
-      return
+      return false
     end
     
     
@@ -503,42 +551,43 @@ local herobrine = {
         -- teleport to player instead of running
         local telepos = herob.find_spawn_near(self.attack:get_pos(), 3, true)
         if telepos then
-          if self.teleportaway(self, telepos) then return true end
+          if self.teleportaway(self, telepos) then return false end
         end
       end
     end
     
     
+    
+    
     -- if we have a prank to carry out
-    if self.intent.prank_pos and herob.pranks[self.intent.current_prank] then
+    if self.intent.prank_pos and herob.pranks[self.intent.current_prank] and herob.pranks[self.intent.current_prank].persistent(self, dtime, moveresult) then
       local nearpos = herob.find_spawn_near(self.intent.prank_pos, 3, true)
       if self.intent.direct_spawn then nearpos = self.intent.prank_pos end
       if vector.distance(s, self.intent.prank_pos) < 1.5 and not self.intent.at_target then
-        get_prank_function(self, herob.pranks[self.intent.current_prank].func)(self)
+        herob.get_prank_function(self, herob.pranks[self.intent.current_prank].func)(self)
       elseif nearpos and self:ready_to_path() and not self.intent.at_target and not self._necessary_path and herob.pranks[self.intent.current_prank] then
-        self.walk_chance = 1
-        local path = self:gopath(nearpos,get_prank_function(self, herob.pranks[self.intent.current_prank].func))
+        local path = self:gopath(nearpos,herob.get_prank_function(self, herob.pranks[self.intent.current_prank].func))
         
         if not path and vector.distance(s, nearpos) > 1.5 then
-          if self.teleportaway(self, nearpos) then return true end
+          if self.teleportaway(self, nearpos) then return false end
           self.object:set_velocity(vector.zero())
-          self.walk_chance = 0
           herob.pranks[self.intent.current_prank].func(self)
         else
           self._partial_path = false
         end
       elseif not nearpos then -- if we can't stand near our target then just leave.
         self.teleportaway(self)
-        return
+        return false
       end
     end
     
-    -- if we have looted a sword.. Wield it.
-    local inv = herob.get_inv()
-    local sword, sword_id = herob.get_item_from_inv(inv, "sword")
-    if sword then
-      self.set_wielded_item(self, sword_id)
-    end
+    if self._ticktimer < 0.5 then return end -- everything past is every half second
+    self._ticktimer = 0
+    
+    
+    self.item_drop_management()
+
+
     
   end
 }
@@ -624,41 +673,65 @@ core.register_globalstep(function(dtime)
       
       -- run through each prank and find out if there are any applicable places to do these.
       for name,prank in pairs(herob.pranks) do
+        if prank.has then -- `has` are tools required to pull this prank off.
+          for _,item in pairs(prank.has) do
+            local stack, id = herob.get_item_from_inv(herob.get_inv(), item)
+            if not stack then
+              goto continue
+            end
+          end
+        end
+        
+        
         
         if prank.type == "node_indexed" then
-
+          local prerecs, spawn
           local nodepostable, amounts
-          if prank.under_air then
-            nodepostable, amounts = core.find_nodes_in_area_under_air(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+          if prank.get_custom_spawn then
+            prerecs = prank.get_custom_spawn(player)
+            if prerecs then
+              spawn = prerecs.prank_pos
+            end
           else
-            nodepostable, amounts = core.find_nodes_in_area(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+            if prank.under_air then
+              nodepostable, amounts = core.find_nodes_in_area_under_air(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+            else
+              nodepostable, amounts = core.find_nodes_in_area(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+            end
           end
-          for i=1, 10 do
-            
-            local nodepos = nodepostable[math.random(#nodepostable)]
-            if nodepos and (prank.requires.fullnode and herob.walknode(nodepos, true) or not prank.requires.fullnode) then
-              --print(herob.walknode(nodepos, true))
-              possible_pranks[i] = {current_prank=name, prank_pos=nodepos, distance_from_player=prank.distance_from_player}
-              i = i + 1
-              break
+
+          if not spawn then
+            for i=1, 10 do
+              spawn = nodepostable[math.random(#nodepostable)]
+              if spawn and (prank.requires.fullnode and herob.walknode(spawn, true) or not prank.requires.fullnode) then
+                --print(herob.walknode(spawn, true))
+                break
+              end
             end
           end
           
+          if spawn then
+            possible_pranks[i] = {
+              current_prank=name,
+              prank_pos=spawn,
+              distance_from_player=prank.distance_from_player
+            }
+            i = i + 1
+          end
           
+
         elseif prank.type == "player_indexed" then
           local prerecs, spawn
           if prank.get_custom_spawn then
             prerecs = prank.get_custom_spawn(player)
             if prerecs then
               spawn = prerecs.prank_pos
-            else
-              spawn = herob.find_spawn_near(pos, prank.distance_from_player)
             end
           else
             spawn = herob.find_spawn_near(pos, prank.distance_from_player)
           end
             
-          if (prank.get_custom_spawn and prerecs) or not prank.get_custom_spawn then
+          if spawn then
             possible_pranks[i] = {
               direct_spawn = prerecs.direct_spawn,
               current_prank=name,
@@ -683,8 +756,8 @@ core.register_globalstep(function(dtime)
             possible_pranks[i] = {current_prank=name, prank_pos=vector.add(nodepos, vector.new(0,-1,0)), distance_from_player=prank.distance_from_player, current_base=herob.all_bases[pname][current_base]}
             i = i + 1
           end
-          
         end
+        ::continue::
       end
       
       if possible_pranks[1] then
@@ -697,6 +770,7 @@ core.register_globalstep(function(dtime)
         spawn(spawnpos, possible_pranks[prank_index])
         if herobrine_exists() then return end
       end
+
 
     end
   end

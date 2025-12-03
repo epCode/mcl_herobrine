@@ -11,6 +11,12 @@ enable_prank_take_bed (Take Bed) bool true
 enable_prank_lava_on_base (Lava!!) bool true
 enable_prank_push_player_off_cliff (Push Payers off Cliff) bool true
 
+[Abilities]
+
+# Unckeck to disable unwanted capabilities.
+enable_prank_mine_wood (Get Wood) bool true
+enable_prank_mine_chest (Mine Chests) bool true
+
 
 [Misc]
 
