@@ -26,7 +26,7 @@ herob.register_prank("loot_chest", {nodenames = herob.lootablechests, creep_line
     minetest.after(math.random(3), function()
       if self and self.object and self._tel_timer and self._tel_timer > 0 then
         chestentity:close("herobrine")
-        self._tel_timer = 1
+        self._tel_timer = 3
       end
     end)
   end
@@ -212,6 +212,8 @@ function herob.mine_substance(prankname, nodenames, def)
         self:set_animation("punch")
         
         local node = self._node_mining.node
+        local def = core.registered_nodes[node.name]
+        if not def or def and not def.sounds then self._node_mining = nil; goto skip_mining end
         self._node_mining.timer = self._node_mining.timer - dtime
         self._node_mining.soundtimer = self._node_mining.soundtimer - dtime
         
@@ -228,9 +230,9 @@ function herob.mine_substance(prankname, nodenames, def)
         end
       end
       
-      
-      
       if self._node_mining then return end
+      
+      ::skip_mining::
       
       if not self.minelist then
         -- create list of positions to mine (like for a tree etc)
@@ -287,14 +289,15 @@ function herob.mine_substance(prankname, nodenames, def)
     local tool_speed = (tool_def.dig_speed_class or 0)+1
     local tool_speed = tool_speed*tool_speed
     
+    local hard = core.registered_nodes[node.name]._mcl_hardness or 1
     -- Let me explain..
     -- hardness is a weird thingy, obsidian is 50, snow is 0.1
     -- So this is some math that makes hb mine at similar speeds to what
     -- the player would using the same tools. :shrug. Idk what the actual math is.
     local timetomine =
-    (core.registered_nodes[node.name]._mcl_hardness or 1)*(
+    hard*(
       4*(
-        core.registered_nodes[node.name]._mcl_hardness/40+1
+        hard/40+1
       )
     )/tool_speed
     

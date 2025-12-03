@@ -22,6 +22,7 @@ enable_prank_mine_chest (Mine Chests) bool true
 
 # A random time in seconds is drawn from double this number
 average_spawn_time (Average time between appearing in seconds) int 900
+spawn_maxlight (Maximum light level in which Herobrine can spawn) int 8
 
 
 one_at_a_time (Only allow one Herobrine to exist at once.) bool true

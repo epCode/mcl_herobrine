@@ -2,7 +2,7 @@ herob = {
   pranks = {},
   wieldview_luaentites = {}
 }
-
+local MAXLIGHT = tonumber(core.settings:get("spawn_maxlight")) or 8
 local AVERAGESPAWN = tonumber(core.settings:get("average_spawn_time")) or 900
 core.log("action", "Average time between herobrine spawn set to "..AVERAGESPAWN.." seconds, or "..(AVERAGESPAWN/60).." minutes.")
 
@@ -32,7 +32,7 @@ herob.herobrine_is = false
 
 -- Herobrine's collisionbox
 local hb_collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.89, 0.3}
-local DST = false -- Disables view teleportation for debug and testing
+local DST = true -- Disables view teleportation for debug and testing
 
 
 local function herobrine_exists()
@@ -165,7 +165,7 @@ function herob.spawn_is_ok(pos, light_insensitive)
   local twopos = core.get_node(vector.add(pos, vector.new(0,1,0)))
   if not core.registered_nodes[twopos.name].walkable -- must have headspace to spawn in
   and not check_players(pos, 1.5, hb_collisionbox) -- players cannot see us spawn
-  and (core.get_node_light(vector.add(pos, vector.new(0,2,0))) < 3 or light_insensitive) then -- cannot spawn in light above 4 (Can walk in it tho)
+  and (core.get_node_light(vector.add(pos, vector.new(0,2,0))) <= MAXLIGHT or light_insensitive) then -- cannot spawn in light above 4 (Can walk in it tho)
     return true
   end
 end
@@ -198,7 +198,8 @@ end
 
 local function spawn(pos, intent)
   -- disabled log because it happens to often
-  if not pos then --[[core.log("warning", "Tried to spawn herobrine but no valid position found!")]] return end
+  local prank_spawn = herob.find_spawn_near(intent.prank_pos, 3) -- if we can't be at prank pos reliably, then don't bother spawning
+  if not pos or not prank_spawn then --[[core.log("warning", "Tried to spawn herobrine but no valid position found!")]] return end
   local obj = core.add_entity(pos, "mcl_herobrine:herobrine")
   herob.herobrine_is = true
   local lua = obj:get_luaentity()
@@ -556,8 +557,8 @@ local herobrine = {
       end
     end
     
-    
-    
+    -- disable due to trying to store as staticdata
+    --self._locked_object = core.get_player_by_name((self.intent._pranked_player_name or ""))
     
     -- if we have a prank to carry out
     if self.intent.prank_pos and herob.pranks[self.intent.current_prank] and herob.pranks[self.intent.current_prank].persistent(self, dtime, moveresult) then
