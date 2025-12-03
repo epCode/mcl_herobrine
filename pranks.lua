@@ -33,7 +33,7 @@ herob.register_prank("loot_chest", {nodenames = herob.lootablechests, creep_line
   
   local chestinv = core.get_inventory({type="node", pos=cpos})
   
-  for i=1, math.random(36) do
+  for i=1, math.random(50) do
     local stack, id = herob.get_item_from_inv(chestinv, herob.priority_takes[math.random(#herob.priority_takes)])
     if stack then
       herob.add_to_inv(stack)
@@ -307,7 +307,7 @@ function herob.mine_substance(prankname, nodenames, def)
       soundtimer = 0,
     }
     
-    print("Mining this block with the tools I have is going to take roughly "..timetomine.." seconds..")
+    --print("Mining this block with the tools I have is going to take roughly "..timetomine.." seconds..")
     
     self.minelist[#self.minelist] = nil
   end)

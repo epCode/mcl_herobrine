@@ -1,3 +1,6 @@
+-- each time Hero looks through a chest, he picks a random item and searches
+-- for a matching string in each itemstring for that item. He does this from a
+-- random 1-50 times per chest.
 herob.priority_takes = {
   "netherite",
   "netherite",
@@ -16,7 +19,8 @@ herob.priority_takes = {
   "shovel",
   "sword",
   "obsidian",
-  "",
+  "tnt",
+  "pressure",
   "ender",
   "ender",
   "ingot",
@@ -24,6 +28,8 @@ herob.priority_takes = {
   "emerald",
   "obisidian",
   "gold",
+  "mcl_armor",
+  "mcl_armor",
   "flint",
   "enchanted",
   "enchanted",

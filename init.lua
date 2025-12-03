@@ -32,7 +32,7 @@ herob.herobrine_is = false
 
 -- Herobrine's collisionbox
 local hb_collisionbox = {-0.3, -0.01, -0.3, 0.3, 1.89, 0.3}
-local DST -- Disables view teleportation for debug and testing
+local DST = false -- Disables view teleportation for debug and testing
 
 
 local function herobrine_exists()
