@@ -3,7 +3,7 @@ herob = {
   wieldview_luaentites = {}
 }
 local MAXLIGHT = tonumber(core.settings:get("spawn_maxlight")) or 8
-local AVERAGESPAWN = tonumber(core.settings:get("average_spawn_time")) or 900
+local AVERAGESPAWN = tonumber(core.settings:get("average_spawn_time")) or 1200
 core.log("action", "Average time between herobrine spawn set to "..AVERAGESPAWN.." seconds, or "..(AVERAGESPAWN/60).." minutes.")
 
 local ONEATATIME = core.settings:get_bool("one_at_a_time")
