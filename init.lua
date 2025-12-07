@@ -70,6 +70,7 @@ end
 
 function herob.get_inv()
   local invpos = vector.new(0, -1, 0) -- absalute worst way to do this. Don't do this.
+  core.load_area(invpos)
   local heroinv = core.get_inventory({type="node", pos=invpos})
   
   if not heroinv or heroinv and not heroinv:get_list("main") then
