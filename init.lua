@@ -672,6 +672,7 @@ core.register_globalstep(function(dtime)
       local possible_pranks = {}
       
       local i = 1
+      local prank_fail
       
       -- run through each prank and find out if there are any applicable places to do these.
       for name,prank in pairs(herob.pranks) do
