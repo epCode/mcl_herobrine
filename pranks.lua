@@ -213,7 +213,7 @@ function herob.mine_substance(prankname, nodenames, def)
         
         local node = self._node_mining.node
         local def = core.registered_nodes[node.name]
-        if not def or def and not def.sounds then self._node_mining = nil; goto skip_mining end
+        if not def or def and not def.sounds then self._node_mining = nil; return end
         self._node_mining.timer = self._node_mining.timer - dtime
         self._node_mining.soundtimer = self._node_mining.soundtimer - dtime
         
@@ -231,9 +231,7 @@ function herob.mine_substance(prankname, nodenames, def)
       end
       
       if self._node_mining then return end
-      
-      ::skip_mining::
-      
+            
       if not self.minelist then
         -- create list of positions to mine (like for a tree etc)
         local nodepositions, amounts = core.find_nodes_in_area(vector.subtract(s, 10), vector.add(s, 10), herob.pranks[self.intent.current_prank].nodenames)

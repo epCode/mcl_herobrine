@@ -679,87 +679,88 @@ core.register_globalstep(function(dtime)
           for _,item in pairs(prank.has) do
             local stack, id = herob.get_item_from_inv(herob.get_inv(), item)
             if not stack then
-              goto continue
-            end
-          end
-        end
-        
-        
-        
-        if prank.type == "node_indexed" then
-          local prerecs, spawn
-          local nodepostable, amounts
-          if prank.get_custom_spawn then
-            prerecs = prank.get_custom_spawn(player)
-            if prerecs then
-              spawn = prerecs.prank_pos
-            end
-          else
-            if prank.under_air then
-              nodepostable, amounts = core.find_nodes_in_area_under_air(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
-            else
-              nodepostable, amounts = core.find_nodes_in_area(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
-            end
-          end
-
-          if not spawn then
-            for i=1, 10 do
-              spawn = nodepostable[math.random(#nodepostable)]
-              if spawn and (prank.requires.fullnode and herob.walknode(spawn, true) or not prank.requires.fullnode) then
-                --print(herob.walknode(spawn, true))
-                break
-              end
-            end
-          end
-          
-          if spawn then
-            possible_pranks[i] = {
-              current_prank=name,
-              prank_pos=spawn,
-              distance_from_player=prank.distance_from_player
-            }
-            i = i + 1
-          end
-          
-
-        elseif prank.type == "player_indexed" then
-          local prerecs, spawn
-          if prank.get_custom_spawn then
-            prerecs = prank.get_custom_spawn(player)
-            if prerecs then
-              spawn = prerecs.prank_pos
-            end
-          else
-            spawn = herob.find_spawn_near(pos, prank.distance_from_player)
-          end
-            
-          if spawn then
-            possible_pranks[i] = {
-              direct_spawn = prerecs.direct_spawn,
-              current_prank=name,
-              prank_pos=spawn,
-              distance_from_player=prank.distance_from_player,
-            }
-          end
-        elseif prank.type == "base_indexed" and herob.all_bases[pname] then
-          local used_base, current_base
-          for i,base_cluster in pairs(herob.all_bases[pname]) do
-            local basepos = herob.get_mean_cluster_center(base_cluster)
-            --print("There is a base we might use! "..vector.distance(pos, basepos).." nodes away from player")
-            if vector.distance(pos, basepos) < BASE_EPSILON then
-              used_base = basepos
-              current_base = i
+              prank_fail = true
               break
             end
           end
-          
-          local nodepos = herob.find_spawn_near(used_base, BASE_EPSILON)
-          if nodepos then
-            possible_pranks[i] = {current_prank=name, prank_pos=vector.add(nodepos, vector.new(0,-1,0)), distance_from_player=prank.distance_from_player, current_base=herob.all_bases[pname][current_base]}
-            i = i + 1
+        end
+        
+        
+        if not prank_fail then
+          if prank.type == "node_indexed" then
+            local prerecs, spawn
+            local nodepostable, amounts
+            if prank.get_custom_spawn then
+              prerecs = prank.get_custom_spawn(player)
+              if prerecs then
+                spawn = prerecs.prank_pos
+              end
+            else
+              if prank.under_air then
+                nodepostable, amounts = core.find_nodes_in_area_under_air(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+              else
+                nodepostable, amounts = core.find_nodes_in_area(vector.subtract(pos, prank.distance_from_player), vector.add(pos, prank.distance_from_player), prank.nodenames)
+              end
+            end
+
+            if not spawn then
+              for i=1, 10 do
+                spawn = nodepostable[math.random(#nodepostable)]
+                if spawn and (prank.requires.fullnode and herob.walknode(spawn, true) or not prank.requires.fullnode) then
+                  --print(herob.walknode(spawn, true))
+                  break
+                end
+              end
+            end
+            
+            if spawn then
+              possible_pranks[i] = {
+                current_prank=name,
+                prank_pos=spawn,
+                distance_from_player=prank.distance_from_player
+              }
+              i = i + 1
+            end
+            
+
+          elseif prank.type == "player_indexed" then
+            local prerecs, spawn
+            if prank.get_custom_spawn then
+              prerecs = prank.get_custom_spawn(player)
+              if prerecs then
+                spawn = prerecs.prank_pos
+              end
+            else
+              spawn = herob.find_spawn_near(pos, prank.distance_from_player)
+            end
+              
+            if spawn then
+              possible_pranks[i] = {
+                direct_spawn = prerecs.direct_spawn,
+                current_prank=name,
+                prank_pos=spawn,
+                distance_from_player=prank.distance_from_player,
+              }
+            end
+          elseif prank.type == "base_indexed" and herob.all_bases[pname] then
+            local used_base, current_base
+            for i,base_cluster in pairs(herob.all_bases[pname]) do
+              local basepos = herob.get_mean_cluster_center(base_cluster)
+              --print("There is a base we might use! "..vector.distance(pos, basepos).." nodes away from player")
+              if vector.distance(pos, basepos) < BASE_EPSILON then
+                used_base = basepos
+                current_base = i
+                break
+              end
+            end
+            
+            local nodepos = herob.find_spawn_near(used_base, BASE_EPSILON)
+            if nodepos then
+              possible_pranks[i] = {current_prank=name, prank_pos=vector.add(nodepos, vector.new(0,-1,0)), distance_from_player=prank.distance_from_player, current_base=herob.all_bases[pname][current_base]}
+              i = i + 1
+            end
           end
         end
-        ::continue::
       end
       
       if possible_pranks[1] then
